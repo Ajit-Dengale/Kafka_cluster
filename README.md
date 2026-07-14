@@ -74,7 +74,17 @@ kubectl -n kafka get pods
 
 ## GitHub Actions
 
-A workflow is also available in [.github/workflows/kafka-learning.yml](.github/workflows/kafka-learning.yml). It runs the same start/verify/stop flow on GitHub-hosted runners, so you can trigger it from the Actions tab instead of running the shell scripts locally.
+A workflow is also available in [.github/workflows/kafka-learning.yml](.github/workflows/kafka-learning.yml). When you run it from the Actions tab, GitHub will ask you to choose either start or stop, and it will execute only that branch.
+
+## Interactive control
+
+If you prefer a simple prompt instead of remembering separate commands, use:
+
+```bash
+./scripts/manage-cluster.sh
+```
+
+It will ask whether you want to start or stop the local cluster.
 
 ## Notes
 

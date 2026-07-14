@@ -2,25 +2,18 @@ name: Kafka Learning
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - feat/Initial-Setup
-    paths:
-      - '.github/workflows/kafka-learning.yml'
-      - 'scripts/**'
-      - 'argocd/**'
-      - 'kafka/**'
-      - 'kind/**'
-  pull_request:
-    paths:
-      - '.github/workflows/kafka-learning.yml'
-      - 'scripts/**'
-      - 'argocd/**'
-      - 'kafka/**'
-      - 'kind/**'
+    inputs:
+      action:
+        description: Choose whether to start or stop the local cluster
+        required: true
+        default: start
+        type: choice
+        options:
+          - start
+          - stop
 
 jobs:
-  smoke-test:
+  manage-cluster:
     runs-on: ubuntu-latest
     timeout-minutes: 90
 
@@ -28,29 +21,33 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install kubectl
-        uses: azure/setup-kubectl@v4
-        with:
-          version: v1.30.0
-
-      - name: Install Helm
-        uses: azure/setup-helm@v4
-        with:
-          version: v3.14.4
-
       - name: Install kind
         run: |
           curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.23.0/kind-linux-amd64
           chmod +x ./kind
           sudo mv ./kind /usr/local/bin/kind
 
+      - name: Install kubectl
+        if: ${{ inputs.action == 'start' }}
+        uses: azure/setup-kubectl@v4
+        with:
+          version: v1.30.0
+
+      - name: Install Helm
+        if: ${{ inputs.action == 'start' }}
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.14.4
+
       - name: Make scripts executable
         run: chmod +x scripts/*.sh
 
       - name: Start the local environment
+        if: ${{ inputs.action == 'start' }}
         run: ./scripts/start-everything.sh
 
       - name: Verify Argo CD and Kafka
+        if: ${{ inputs.action == 'start' }}
         run: |
           set -e
           kubectl -n argocd wait --for=condition=Ready pod --all --timeout=15m
@@ -61,5 +58,5 @@ jobs:
           kubectl -n kafka delete pod kafka-client --ignore-not-found=true
 
       - name: Stop the local environment
-        if: always()
+        if: ${{ inputs.action == 'stop' }}
         run: ./scripts/stop-everything.sh
