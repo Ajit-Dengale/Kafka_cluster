@@ -8,7 +8,7 @@ spec:
   source:
     repoURL: https://github.com/Ajit-Dengale/Kafka_cluster.git
     targetRevision: feat/Initial-Setup
-    path: argocd/app-manifests
+    path: kafka
   destination:
     server: https://kubernetes.default.svc
     namespace: kafka

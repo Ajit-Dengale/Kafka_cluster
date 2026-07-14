@@ -76,4 +76,4 @@ kubectl -n kafka get pods
 
 - This setup is intentionally minimal to stay within a low-RAM machine.
 - The Kafka deployment is driven by the manifest in [kafka/kafka-kraft-manifest.yaml](kafka/kafka-kraft-manifest.yaml).
-- The old Strimzi and Bitnami chart-based files were removed to keep the repo focused on the working KRaft flow.
+
