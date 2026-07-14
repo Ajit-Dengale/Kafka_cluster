@@ -16,7 +16,10 @@ helm upgrade --install argocd argo/argo-cd \
 
 kubectl -n "$NAMESPACE" rollout status deployment/argocd-server --timeout=10m
 
+kubectl apply -f argocd/kafka-application.yaml
+
 echo "Argo CD installed."
+echo "Argo CD application created."
 echo "To access the UI:"
 echo "  kubectl -n argocd port-forward svc/argocd-server 8080:443"
 echo "Initial admin password:"
