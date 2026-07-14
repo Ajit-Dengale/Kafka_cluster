@@ -76,6 +76,32 @@ kubectl -n kafka get pods
 
 A workflow is also available in [.github/workflows/kafka-learning.yml](.github/workflows/kafka-learning.yml). When you run it from the Actions tab, GitHub will ask you to choose either start or stop, and it will execute only that branch.
 
+### Use a self-hosted runner on your own machine
+
+If you want the workflow to start the cluster on your local machine instead of on GitHub-hosted infrastructure, register a self-hosted runner for this repository:
+
+1. Open your GitHub repository and go to Settings → Actions → Runners.
+2. Choose New self-hosted runner and select Linux as the OS.
+3. On your local machine, run the commands shown by GitHub to download and configure the runner.
+4. Make sure Docker is installed and running on that machine, because the kind cluster needs it.
+5. Start the runner with:
+
+```bash
+./run.sh
+```
+
+A typical Linux setup looks like this:
+
+```bash
+sudo apt-get update
+sudo apt-get install -y docker.io curl
+sudo systemctl enable docker --now
+sudo usermod -aG docker "$USER"
+newgrp docker
+```
+
+The workflow is already set to use a self-hosted runner with the label set to `self-hosted, linux, x64`.
+
 ## Interactive control
 
 If you prefer a simple prompt instead of remembering separate commands, use:
