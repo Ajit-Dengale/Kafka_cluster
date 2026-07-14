@@ -3,14 +3,12 @@
 This workspace contains a small, low-memory setup for learning Kafka on Kubernetes with:
 
 - kind for a local Kubernetes cluster
-- Helm for package management
 - Argo CD for GitOps-style deployment automation
+- a single-broker Kafka deployment using KRaft, with no ZooKeeper
 
 It is tuned for a machine with about 8 GiB RAM and limited CPU.
 
-The Kafka part uses Strimzi with a KRaft-based configuration so you avoid the extra ZooKeeper overhead while keeping the setup simple.
-
-## Step 1: verify prerequisites
+## Prerequisites
 
 Make sure these tools are installed:
 
@@ -25,40 +23,33 @@ You can verify them with:
 command -v docker kind kubectl helm
 ```
 
-## Step 2: create the lightweight kind cluster
+## Start everything
+
+Use the convenience script to recreate the cluster and install both Argo CD and Kafka:
 
 ```bash
-./scripts/create-kind-cluster.sh
-```
-
-This creates a single-node cluster that is suitable for learning and light testing.
-
-## Step 3: install Argo CD with Helm
-
-```bash
-./scripts/install-argocd.sh
-```
-
-## Step 4: install a tiny Kafka environment with Strimzi
-
-```bash
-./scripts/install-kafka.sh
-```
-
-This deploys a single-broker Kafka cluster from the YAML manifest in [kafka/kafka-kraft.yaml](kafka/kafka-kraft.yaml). The Helm values are in [kafka/strimzi-values.yaml](kafka/strimzi-values.yaml), so you can inspect and update them later.
-
-## Step 5: stop or start everything later
-
-If you want a simple way to pause or restart the whole local environment, use:
-
-```bash
-./scripts/stop-everything.sh
 ./scripts/start-everything.sh
 ```
 
-The stop script removes the Kafka and Argo CD namespaces and deletes the kind cluster. The start script recreates the cluster and re-runs the Argo CD and Kafka setup.
+## Stop everything
 
-## Step 6: access the tools
+To stop and remove the entire local environment:
+
+```bash
+./scripts/stop-everything.sh
+```
+
+## Manual steps
+
+If you want to run the pieces separately:
+
+```bash
+./scripts/create-kind-cluster.sh
+./scripts/install-argocd.sh
+./scripts/install-kafka.sh
+```
+
+## Access the tools
 
 ### Argo CD UI
 
@@ -81,7 +72,48 @@ kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.pas
 kubectl -n kafka get pods
 ```
 
+## GitHub Actions
+
+A workflow is also available in [.github/workflows/kafka-learning.yml](.github/workflows/kafka-learning.yml). When you run it from the Actions tab, GitHub will ask you to choose either start or stop, and it will execute only that branch.
+
+### Use a self-hosted runner on your own machine
+
+If you want the workflow to start the cluster on your local machine instead of on GitHub-hosted infrastructure, register a self-hosted runner for this repository:
+
+1. Open your GitHub repository and go to Settings → Actions → Runners.
+2. Choose New self-hosted runner and select Linux as the OS.
+3. On your local machine, run the commands shown by GitHub to download and configure the runner.
+4. Make sure Docker is installed and running on that machine, because the kind cluster needs it.
+5. Start the runner with:
+
+```bash
+./run.sh
+```
+
+A typical Linux setup looks like this:
+
+```bash
+sudo apt-get update
+sudo apt-get install -y docker.io curl
+sudo systemctl enable docker --now
+sudo usermod -aG docker "$USER"
+newgrp docker
+```
+
+The workflow is already set to use a self-hosted runner with the label set to `self-hosted, linux, x64`.
+
+## Interactive control
+
+If you prefer a simple prompt instead of remembering separate commands, use:
+
+```bash
+./scripts/manage-cluster.sh
+```
+
+It will ask whether you want to start or stop the local cluster.
+
 ## Notes
 
 - This setup is intentionally minimal to stay within a low-RAM machine.
-- If you want, the next step can be adding a simple producer/consumer test, topic creation, or a sample Argo CD app that deploys Kafka-related resources.
+- The Kafka deployment is driven by the manifest in [kafka/kafka-kraft-manifest.yaml](kafka/kafka-kraft-manifest.yaml).
+

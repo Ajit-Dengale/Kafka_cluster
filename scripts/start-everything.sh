@@ -10,7 +10,13 @@ echo "Starting local Kafka learning environment..."
 
 if kind get clusters 2>/dev/null | grep -q "^${CLUSTER_NAME}$"; then
   echo "Removing existing kind cluster '${CLUSTER_NAME}'..."
-  kind delete cluster --name "$CLUSTER_NAME"
+  kind delete cluster --name "$CLUSTER_NAME" >/dev/null 2>&1 || true
+fi
+
+if command -v docker >/dev/null 2>&1; then
+  docker ps -a --filter "label=io.x-k8s.kind.cluster=${CLUSTER_NAME}" --format '{{.Names}}' | while read -r container; do
+    docker rm -f "$container" >/dev/null 2>&1 || true
+  done
 fi
 
 ./scripts/create-kind-cluster.sh
@@ -21,3 +27,4 @@ echo "Everything is started."
 echo "Useful commands:"
 echo "  kubectl -n kafka get pods"
 echo "  kubectl -n argocd get pods"
+echo "  kubectl -n argocd port-forward svc/argocd-server 8080:443"
