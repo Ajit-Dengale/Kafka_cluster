@@ -1,0 +1,65 @@
+name: Kafka Learning
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feat/Initial-Setup
+    paths:
+      - '.github/workflows/kafka-learning.yml'
+      - 'scripts/**'
+      - 'argocd/**'
+      - 'kafka/**'
+      - 'kind/**'
+  pull_request:
+    paths:
+      - '.github/workflows/kafka-learning.yml'
+      - 'scripts/**'
+      - 'argocd/**'
+      - 'kafka/**'
+      - 'kind/**'
+
+jobs:
+  smoke-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v4
+        with:
+          version: v1.30.0
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.14.4
+
+      - name: Install kind
+        run: |
+          curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.23.0/kind-linux-amd64
+          chmod +x ./kind
+          sudo mv ./kind /usr/local/bin/kind
+
+      - name: Make scripts executable
+        run: chmod +x scripts/*.sh
+
+      - name: Start the local environment
+        run: ./scripts/start-everything.sh
+
+      - name: Verify Argo CD and Kafka
+        run: |
+          set -e
+          kubectl -n argocd wait --for=condition=Ready pod --all --timeout=15m
+          kubectl -n kafka wait --for=condition=Ready pod/kafka-0 --timeout=15m
+          kubectl -n kafka run kafka-client --restart=Never --image=docker.io/apache/kafka:3.9.1 --command -- sleep infinity
+          kubectl -n kafka wait --for=condition=Ready pod/kafka-client --timeout=3m
+          kubectl -n kafka exec kafka-client -- bash -lc '/opt/kafka/bin/kafka-topics.sh --create --bootstrap-server kafka:9092 --topic smoke-test --partitions 1 --replication-factor 1 --if-not-exists && printf "hello-from-kafka\n" | /opt/kafka/bin/kafka-console-producer.sh --bootstrap-server kafka:9092 --topic smoke-test --property parse.key=false && /opt/kafka/bin/kafka-console-consumer.sh --bootstrap-server kafka:9092 --topic smoke-test --from-beginning --max-messages 1'
+          kubectl -n kafka delete pod kafka-client --ignore-not-found=true
+
+      - name: Stop the local environment
+        if: always()
+        run: ./scripts/stop-everything.sh

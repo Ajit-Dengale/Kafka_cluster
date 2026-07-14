@@ -72,6 +72,10 @@ kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.pas
 kubectl -n kafka get pods
 ```
 
+## GitHub Actions
+
+A workflow is also available in [.github/workflows/kafka-learning.yml](.github/workflows/kafka-learning.yml). It runs the same start/verify/stop flow on GitHub-hosted runners, so you can trigger it from the Actions tab instead of running the shell scripts locally.
+
 ## Notes
 
 - This setup is intentionally minimal to stay within a low-RAM machine.
